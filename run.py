@@ -91,13 +91,13 @@ def main(
                 except HDXError:
                     logger.exception("Could not update resource")
 
-            # create population rasters and upload to mapbox
+            # render population rasters and upload to mapbox
             if not mapbox_countries:
                 logger.warning("No countries provided for MapBox uploads")
             else:
-                pop_rast = PopulationRaster(configuration["legend"], temp_folder)
-                pop_rast.generate_mapbox_data(mapbox_countries)
-                uploaded_rasters = pop_rast.upload_to_mapbox(mapbox_auth)
+                pop_rast = PopulationRaster(mapbox_auth, configuration["legend"], temp_folder)
+                rendered_rasters = pop_rast.generate_mapbox_data(mapbox_countries)
+                uploaded_rasters = pop_rast.upload_to_mapbox(rendered_rasters)
 
                 for raster in uploaded_rasters:
                     logger.info(f"{raster}: {uploaded_rasters[raster]['mapid']}")

@@ -15,12 +15,13 @@ logger = logging.getLogger()
 
 
 class PopulationRaster:
-    def __init__(self, legend, temp_folder):
+    def __init__(self, mapbox_auth, legend, temp_folder):
         self.temp_folder = temp_folder
         self.legend = legend
-        self.rendered_rasters = dict()
+        self.mapbox_auth = mapbox_auth
 
     def generate_mapbox_data(self, countries):
+        rendered_rasters = dict()
         for iso in countries:
             ftp_url = f"ftp://ftp.worldpop.org.uk/GIS/Population/Global_2000_2020/2020/{iso.upper()}/{iso.lower()}_ppp_2020.tif"
             orig_raster = join(self.temp_folder, f"{iso.lower()}_ppp_2020.tif")
@@ -75,21 +76,22 @@ class PopulationRaster:
                         dst.write(c)
                     with r_open(color_raster) as src:
                         final.write_band(i, src.read(1))
-            self.rendered_rasters[iso] = render_raster
+            rendered_rasters[iso] = render_raster
+        return rendered_rasters
 
-    def upload_to_mapbox(self, mapbox_auth):
+    def upload_to_mapbox(self, rendered_rasters):
         results = dict()
-        service = Uploader(access_token=mapbox_auth)
+        service = Uploader(access_token=self.mapbox_auth)
         alphabet = string.ascii_lowercase + string.digits
-        for country in self.rendered_rasters:
+        for country in rendered_rasters:
             mapid = f"humdata.{''.join(choices(alphabet, k=8))}"
             name = f"{country.lower()}_ppp_2020-{''.join(choices(alphabet, k=6))}"
-            with open(self.rendered_rasters[country], 'rb') as src:
+            with open(rendered_rasters[country], 'rb') as src:
                 upload_resp = service.upload(src, mapid, name=name)
             if upload_resp.status_code == 422:
                 for i in range(5):
                     sleep(5)
-                    with open(self.rendered_rasters[country], 'rb') as src:
+                    with open(rendered_rasters[country], 'rb') as src:
                         upload_resp = service.upload(src, mapid, name=name)
                     if upload_resp.status_code != 422:
                         break
