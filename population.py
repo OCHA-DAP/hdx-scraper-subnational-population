@@ -32,18 +32,21 @@ class Population:
 
                 # find dataset and resource to use
                 dataset = Dataset.read_from_hdx(self.exceptions["dataset"].get(iso, f"cod-ps-{iso.lower()}"))
+                use_raster = False
                 if not dataset:
-                    logger.warning(f"{iso}: Could not find pop dataset")
-                    continue
-                resources = dataset.get_resources()
-                resource_name = self.exceptions["resource"].get(iso, f"adm(in)?{level}")
-                pop_resource = [r for r in resources if r.get_file_type() == "csv" and
-                                bool(re.match(f".*{resource_name}.*", r["name"], re.IGNORECASE))]
-                if len(pop_resource) == 0:
-                    logger.error(f"{iso}: Could not find csv resource at adm{level}")
-                    continue
+                    logger.warning(f"{iso}: Could not find PS dataset")
+                    use_raster = True
 
-                if not pop_resource:
+                if dataset:
+                    resources = dataset.get_resources()
+                    resource_name = self.exceptions["resource"].get(iso, f"adm(in)?{level}")
+                    pop_resource = [r for r in resources if r.get_file_type() == "csv" and
+                                    bool(re.match(f".*{resource_name}.*", r["name"], re.IGNORECASE))]
+                    if len(pop_resource) == 0:
+                        logger.error(f"{iso}: Could not find csv resource at adm{level}")
+                        continue
+
+                if use_raster:
                     dataset = Dataset.read_from_hdx(
                         f"worldpop-population-counts-for-{slugify(Country.get_country_name_from_iso3(iso))}"
                     )
