@@ -22,7 +22,7 @@ setup_logging()
 logger = logging.getLogger(__name__)
 warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
 
-lookup = "hdx-scraper-data-explorer-inputs"
+lookup = "hdx-scraper-subnational-population"
 
 
 def parse_args():
@@ -50,28 +50,28 @@ def main(
         with Download(rate_limit={"calls": 1, "period": 0.1}) as downloader:
 
             # download subnational boundaries
-            subnational_jsons = dict()
-            dataset = Dataset.read_from_hdx(configuration["boundaries"])
+            logger.info("Downloading subnational boundaries")
+            subnational_json = dict()
+            dataset = Dataset.read_from_hdx(configuration["inputs"]["boundaries"])
             for resource in dataset.get_resources():
                 if "polbnda_adm" not in resource["name"]:
                     continue
-                level = resource["name"][8:12]
+                level = resource["name"][11]
                 _, resource_file = resource.download(folder=temp_folder)
-                subnational_jsons[level] = read_file(resource_file)
+                subnational_json[level] = read_file(resource_file)
 
             # merge boundaries
-            levels = subnational_jsons.keys()
-            for subnational_json in subnational_jsons:
-                for level in levels:
-                    subnational_json[level]["ADM_LEVEL"] = int(level[-1])
-                    subnational_json[level]["ADM_PCODE"] = subnational_json[level][f"ADM{level[-1]}_PCODE"]
-                    subnational_json[level]["ADM_REF"] = subnational_json[level][f"ADM{level[-1]}_REF"]
-            subnational_json = subnational_jsons.values()
+            for level in subnational_json:
+                subnational_json[level]["ADM_LEVEL"] = int(level)
+                subnational_json[level]["ADM_PCODE"] = subnational_json[level][f"ADM{level}_PCODE"]
+                subnational_json[level]["ADM_REF"] = subnational_json[level][f"ADM{level}_REF"]
+            subnational_json = subnational_json.values()
             subnational_json = concat(subnational_json)
             subnational_json["Population"] = None
 
             if not hdx_countries:
-                countries = list(set(subnational_json["alpha_3"]))
+                hdx_countries = list(set(subnational_json["alpha_3"]))
+            hdx_countries.sort()
 
             pop = Population(
                 configuration,
@@ -79,23 +79,28 @@ def main(
                 subnational_json,
                 temp_folder,
             )
-            updated_countries = pop.run(countries)
-            updated_data, resource = pop.update_hdx_resource(configuration["population"]["dataset"], updated_countries)
+            updated_countries = pop.run(hdx_countries)
+            if len(updated_countries) > 0:
+                updated_data, resource = pop.update_hdx_resource(configuration["inputs"]["dataset"], updated_countries)
 
-            # update hdx
-            updated_data.to_csv(join(temp_folder, "subnational_population.csv"), index=False)
-            resource.set_file_to_upload(join(temp_folder, "subnational_population.csv"))
-            try:
-                resource.update_in_hdx()
-            except HDXError:
-                logger.exception("Could not update resource")
+                # update hdx
+                updated_data.to_csv(join(temp_folder, "subnational_population.csv"), index=False)
+                resource.set_file_to_upload(join(temp_folder, "subnational_population.csv"))
+                try:
+                    resource.update_in_hdx()
+                except HDXError:
+                    logger.exception("Could not update resource")
 
             # create population rasters and upload to mapbox
             if not mapbox_countries:
                 logger.warning("No countries provided for MapBox uploads")
-            pop_rast = PopulationRaster(configuration, temp_folder)
-            pop_rast.generate_mapbox_data(mapbox_countries)
-            pop_rast.upload_to_mapbox(mapbox_auth)
+            else:
+                pop_rast = PopulationRaster(configuration["legend"], temp_folder)
+                pop_rast.generate_mapbox_data(mapbox_countries)
+                uploaded_rasters = pop_rast.upload_to_mapbox(mapbox_auth)
+
+                for raster in uploaded_rasters:
+                    logger.info(f"{raster}: {uploaded_rasters[raster]['mapid']}")
 
 
 if __name__ == "__main__":

@@ -12,14 +12,14 @@ logger = logging.getLogger()
 
 
 class Population:
-    def __init__(self, configuration, downloader, subnational_jsons, temp_folder):
+    def __init__(self, configuration, downloader, subnational_json, temp_folder):
         self.downloader = downloader
-        self.boundaries = subnational_jsons
+        self.boundaries = subnational_json
         self.temp_folder = temp_folder
-        self.exceptions = {"dataset": configuration.get("dataset_exceptions", {}),
-                           "resource": configuration.get("resource_exceptions", {})}
+        self.exceptions = {"dataset": configuration["inputs"].get("dataset_exceptions", {}),
+                           "resource": configuration["inputs"].get("resource_exceptions", {})}
         self.headers = configuration["pcode_mappings"]
-        self.skip = configuration.get("do_not_process", [])
+        self.skip = configuration["inputs"].get("do_not_process", [])
 
     def run(self, countries):
         updated_countries = dict()
@@ -51,7 +51,7 @@ class Population:
                     pop_resource = [r for r in resources if r.get_file_type() == "geotiff" and
                                     bool(re.match("(?<!\d)\d{4}_constrained", r["name"], re.IGNORECASE))]
                     if not pop_resource:
-                        logger.warning(f"{iso}: Could not find any data at {level}")
+                        logger.warning(f"{iso}: Could not find any data at adm{level}")
                         continue
 
                     # download data
@@ -102,26 +102,25 @@ class Population:
                 pcode_header = None
                 pop_header = None
                 for header in headers:
-                    if pcode_header and pop_header:
-                        continue
                     if not pcode_header:
-                        if header.upper() in [h.replace("#", level) for h in self.headers]:
+                        if header.upper() in [h.replace("#", str(level)) for h in self.headers]:
                             pcode_header = header
-                    if header.upper() == "T_TL":
-                        pop_header = header
+                    if not pop_header:
+                        if header.upper() == "T_TL":
+                            pop_header = header
 
                 if not pcode_header:
-                    logger.error(f"{iso}: Could not find pcode header at {level}")
+                    logger.error(f"{iso}: Could not find pcode header at adm{level}")
                     continue
                 if not pop_header:
-                    logger.error(f"{iso}: Could not find pop header at {level}")
+                    logger.error(f"{iso}: Could not find pop header at adm{level}")
                     continue
 
                 for row in iterator:
                     pcode = row[pcode_header]
                     pop = row[pop_header]
                     if pcode not in list(self.boundaries["ADM_PCODE"]):
-                        logger.warning(f"{iso}: Could not find unit {pcode} in boundaries at {level}")
+                        logger.warning(f"{iso}: Could not find unit {pcode} in boundaries at adm{level}")
                     else:
                         self.boundaries.loc[self.boundaries["ADM_PCODE"] == pcode, "Population"] = pop
                         if iso not in updated_countries[level]:

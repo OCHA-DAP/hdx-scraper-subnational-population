@@ -1,12 +1,10 @@
-dataset: "population-statistics-for-data-explorers"
-
-resource_exceptions:
-  EGY: "egypt_population_estimate_compas_2012_v1.1_0_fis"
-
-do_not_process:
-  - PAK
-
-boundaries: "unmap-international-boundaries-geojson"
+inputs:
+  dataset: "population-statistics-for-data-explorers"
+  resource_exceptions:
+    EGY: "egypt_population_estimate_compas_2012_v1.1_0_fis"
+  boundaries: "unmap-international-boundaries-geojson"
+  do_not_process:
+    - PAK
 
 pcode_mappings:
   - "ADM#_CODE"

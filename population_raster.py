@@ -15,9 +15,9 @@ logger = logging.getLogger()
 
 
 class PopulationRaster:
-    def __init__(self, configuration, temp_folder):
+    def __init__(self, legend, temp_folder):
         self.temp_folder = temp_folder
-        self.legend = configuration["legend"]
+        self.legend = legend
         self.rendered_rasters = dict()
 
     def generate_mapbox_data(self, countries):
