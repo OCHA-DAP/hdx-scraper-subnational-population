@@ -1,0 +1,36 @@
+dataset: "population-statistics-for-data-explorers"
+
+resource_exceptions:
+  EGY: "egypt_population_estimate_compas_2012_v1.1_0_fis"
+
+do_not_process:
+  - PAK
+
+boundaries: "unmap-international-boundaries-geojson"
+
+pcode_mappings:
+  - "ADM#_CODE"
+  - "ADM#_PCODE"
+  - "ADM#CODE"
+  - "ADMIN#_CODE"
+  - "ADMIN#PCOD"
+  - "ADMIN#PCODE"
+  - "ADMN#CODE"
+
+legend:
+  - range: [10, 10000]
+    color: [[233, 85, 77], [233, 85, 77]]
+  - range: [5, 10]
+    color: [[237, 103, 91], [233, 85, 77]]
+  - range: [2, 5]
+    color: [[242, 122, 98], [237, 103, 91]]
+  - range: [1, 2]
+    color: [[250, 144, 89], [242, 122, 98]]
+  - range: [0.5, 1]
+    color: [[254, 169, 86], [250, 144, 89]]
+  - range: [0.2, 0.5]
+    color: [[254, 197, 91], [254, 169, 86]]
+  - range: [0.1, 0.2]
+    color: [[255, 226, 129], [254, 197, 91]]
+  - range: [-99998, 0.1]
+    color: [[255, 255, 178], [255, 226, 129]]
