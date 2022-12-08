@@ -79,7 +79,7 @@ def main(
                 subnational_json,
                 temp_folder,
             )
-            updated_countries = pop.run(hdx_countries)
+            updated_countries = pop.update_population(hdx_countries)
             if len(updated_countries) > 0:
                 updated_data, resource = pop.update_hdx_resource(configuration["inputs"]["dataset"], updated_countries)
 
