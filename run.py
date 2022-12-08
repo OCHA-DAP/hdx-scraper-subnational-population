@@ -60,8 +60,12 @@ def main(
                 _, resource_file = resource.download(folder=temp_folder)
                 subnational_json[level] = read_file(resource_file)
 
-            # merge boundaries
+            # merge boundaries, adding required fields
             for level in subnational_json:
+                add_levels = [i for i in range(1, 4) if not i == level]
+                for add_level in add_levels:
+                    subnational_json[level][f"ADM{add_level}_PCODE"] = None
+                    subnational_json[level][f"ADM{add_level}_REF"] = None
                 subnational_json[level]["ADM_LEVEL"] = int(level)
                 subnational_json[level]["ADM_PCODE"] = subnational_json[level][f"ADM{level}_PCODE"]
                 subnational_json[level]["ADM_REF"] = subnational_json[level][f"ADM{level}_REF"]
