@@ -86,7 +86,7 @@ class Population:
 
     def analyze_tabular(self, resource, iso, level):
         headers, iterator = self.downloader.get_tabular_rows(
-            resource[0]["url"], dict_form=True
+            resource["url"], dict_form=True
         )
 
         pcode_header = None
