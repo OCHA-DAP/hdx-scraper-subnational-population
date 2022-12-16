@@ -1,4 +1,4 @@
-inputs:
+hdx_inputs:
   dataset: "population-statistics-for-data-explorers"
   resource_exceptions:
     EGY: "egypt_population_estimate_compas_2012_v1.1_0_fis"

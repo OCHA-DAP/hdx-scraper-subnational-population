@@ -22,7 +22,7 @@ setup_logging()
 logger = logging.getLogger(__name__)
 warnings.filterwarnings("ignore", category=ShapelyDeprecationWarning)
 
-lookup = "hdx-scraper-subnational-population"
+lookup = "hdx-scraper-viz-population"
 
 
 def parse_args():
@@ -39,20 +39,20 @@ def parse_args():
 
 
 def main(
-        hdx_countries,
-        mapbox_countries,
-        mapbox_auth,
-        **ignore,
+    hdx_countries,
+    mapbox_countries,
+    mapbox_auth,
+    **ignore,
 ):
-    logger.info(f"##### hdx-scraper-subnational-population ####")
+    logger.info(f"##### hdx-scraper-viz-population ####")
     configuration = Configuration.read()
-    with temp_dir(folder="TempSubnationalPopulation") as temp_folder:
+    with temp_dir(folder="TempVizPopulation") as temp_folder:
         with Download(rate_limit={"calls": 1, "period": 0.1}) as downloader:
 
             # download subnational boundaries
             logger.info("Downloading subnational boundaries")
             subnational_json = dict()
-            dataset = Dataset.read_from_hdx(configuration["inputs"]["boundaries"])
+            dataset = Dataset.read_from_hdx(configuration["hdx_inputs"]["boundaries"])
             for resource in dataset.get_resources():
                 if "polbnda_adm" not in resource["name"]:
                     continue
@@ -85,7 +85,8 @@ def main(
             )
             updated_countries = pop.update_population(hdx_countries)
             if len(updated_countries) > 0:
-                updated_data, resource = pop.update_hdx_resource(configuration["inputs"]["dataset"], updated_countries)
+                updated_data, resource = pop.update_hdx_resource(configuration["hdx_inputs"]["dataset"],
+                                                                 updated_countries)
 
                 # update hdx
                 updated_data.to_csv(join(temp_folder, "subnational_population.csv"), index=False)
